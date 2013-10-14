@@ -6,6 +6,7 @@ require 'whois'
 require 'optparse'
 require 'socket'
 require 'date'
+require 'ostruct'
 
 # From http://ruhe.tumblr.com/post/565540643/generate-json-from-ruby-struct
 class Struct
@@ -20,27 +21,37 @@ class Struct
   end
 end
 
-options = {:output => :plaintext}
+options = OpenStruct.new
+options.format = "plaintext"
+options.type = "record"
+options.verbose = false
+
+FORMATS = %w[json plaintext]
+TYPES = %w[available parts properties record]
+
 option_parser = OptionParser.new do |opts|
   executable_name = File.basename($PROGRAM_NAME)
   opts.banner = "Usage: #{executable_name} [options] <domain | IPv4 | IPv6>"
-  opts.version = "v0.2.5"
-  opts.on("-a", "--availabile", "Information about the domain availablity (JSON)") do
-    options[:output] = :available
+  opts.version = [0,3,0]
+  opts.on("-f", "--format FORMAT", FORMATS, "Output in FORMAT", " (#{FORMATS.join(',')})") do |format|
+    options.format = format
   end
-  opts.on("-r", "--record", "Raw WHOIS record for a domain (JSON)") do
-    options[:output] = :record
+  opts.on("-t", "--type TYPE", TYPES, "The TYPE of information to fetch", " (#{TYPES.join(',')})") do |type|
+    options.type = type
   end
-  opts.on("-p", "--parts", "WHOIS records without merging multiple responses (JSON)") do
-    options[:output] = :parts
+  opts.on("-v", "--verbose", "Run verbosely") do |v|
+    options.verbose = v
   end
-  opts.on("-j", "--properties", "Parsed WHOIS record (JSON)") do
-    options[:output] = :properties
+  opts.on_tail("-h", "--help", "Displays this help") do
+    puts opts
+    exit
   end
-  opts.on("-t", "--plaintext", "Raw WHOIS record for a domain (largely whois(1) compatible)") do
-    options[:output] = :plaintext
+  opts.on_tail("--version", "Show version") do
+    puts opts.version.join('.')
+    exit
   end
 end
+
 option_parser.parse!
 if ARGV.empty?
   $stderr.puts "You must supply a fully qualified domain or IPv4 or IPv6 address."
@@ -53,19 +64,19 @@ begin
   ips = Socket.ip_address_list.select{|intf| intf.ipv4? and !intf.ipv4_loopback? and !intf.ipv4_multicast?}
   source_ip = ips[rand(ips.length)].ip_address
   results = Whois::Client.new(:bind_host => source_ip, :timeout => 10).lookup(ARGV[0])
-  if options[:output] == :plaintext
+  if options.format == "plaintext"
     response = results
   else
     response = {}
     response["response"] = {}
     response["response"]["daystamp"] = Date.today
-    case options[:output]
-    when :available
+    case options.type
+    when "available"
       response["response"]["available"] = results.available?
       response["response"]["registered"] = results.registered?
-    when :record
+    when "record"
       response["response"]["record"] = results.content
-    when :parts
+    when "parts"
       response["response"]["parts"] = results.parts
     else
       response["response"]["properties"] = results.properties
@@ -104,7 +115,7 @@ rescue Whois::Error => e
   name = "ApplicationError"
   description = "Whois Error: #{e.class}: #{e.message}"
 ensure
-  if options[:output] == :plaintext
+  if options.format == "plaintext"
     if !description
       puts response
     else
