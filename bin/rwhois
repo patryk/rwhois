@@ -38,6 +38,9 @@ option_parser = OptionParser.new do |opts|
   opts.on("-t", "--plaintext", "Raw WHOIS record for a domain (largely whois(1) compatible)") do
     options[:output] = :plaintext
   end
+  opts.on("--cloudflare", "Return nameservers and registrar name (JSON)") do
+    options[:output] = :cloudflare
+  end
 end
 option_parser.parse!
 if ARGV.empty?
@@ -65,6 +68,13 @@ begin
       response["response"]["record"] = results.content
     when :parts
       response["response"]["parts"] = results.parts
+    when :cloudflare
+      response["response"]["properties"] = {
+        "nameservers" => results.properties[:nameservers],
+        "registrar" => {
+          "name" => results.properties[:registrar][:name]
+        }
+      }
     else
       response["response"]["properties"] = results.properties
     end
