@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
 	s.executables = ['rwhois']
 	s.files = ['rwhois.gemspec', 'bin/rwhois']
 	s.homepage = 'https://www.cloudflare.com/'
-	s.required_ruby_version = Gem::Requirement.new(">= 2.4")
+	s.required_ruby_version = Gem::Requirement.new(">= 2.7")
 	s.summary = 'A JSON wrapper for `whois`'
 	s.add_runtime_dependency('multi_json', '~> 1')
 	s.add_runtime_dependency('whois', '~> 5')
