@@ -15,5 +15,5 @@ Gem::Specification.new do |s|
 	s.add_runtime_dependency('multi_json', '~> 1')
 	s.add_runtime_dependency('whois', '~> 5')
 	s.add_runtime_dependency('whois-parser', '~> 2')
-	s.add_runtime_dependency('activesupport', '~> 7.0.8')
+	s.add_runtime_dependency('activesupport', '>= 7.0.8', '< 7.2.0')
 end
